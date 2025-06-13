@@ -201,11 +201,15 @@ h1 {
 .card-content > div {
     margin-bottom: 14px;
 }
+/* AYARLAR YAZILARI İÇİN KOYU RENK */
 .card label {
     display: block;
     margin-bottom: 6px;
-    font-weight: 500;
-    color: #375a63;
+    font-weight: 600;
+    color: #222 !important;
+}
+body.dark-mode .card label {
+    color: #fff !important;
 }
 .card input[type="number"],
 .card textarea {
@@ -299,7 +303,7 @@ body.dark-mode .card-content {
     background: #242B36;
 }
 body.dark-mode .card label {
-    color: #b6d4e3;
+    color: #fff !important;
 }
 body.dark-mode .card input[type="number"],
 body.dark-mode .card textarea {
@@ -503,12 +507,4 @@ body.dark-mode .tutorial-content {
     .export-container input[type="email"] {min-width: 110px;}
     .summary-section { padding: 11px 3vw 2px 3vw;}
     .progress-label { font-size: 0.93em;}
-}
-
-#settings-modal {
-    overflow-y: auto !important;
-}
-#settings-modal > div {
-    max-height: 90vh;
-    overflow-y: auto;
 }
