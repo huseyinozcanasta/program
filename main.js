@@ -221,6 +221,125 @@ settingsModal.addEventListener('click', function(e){
     if (e.target === settingsModal) closeSettingsModal();
 });
 
+
+
+function loadSettings() {
+    let settings = localStorage.getItem(SETTINGS_KEY);
+    if (settings) {
+        settings = JSON.parse(settings);
+    } else {
+        // Yeni sistemde default olarak 4 hafta x 7 gün 0 hedef
+        settings = { days: [0,1,2,3,4,5,6], slideTargets: Array(4).fill().map(()=>Array(7).fill(0)) };
+    }
+    // Eski sistemden dönüşüm (gerekirse)
+    if (typeof settings.slideTargets === 'number') {
+        settings.slideTargets = Array(4).fill().map(()=>Array(7).fill(settings.slideTargets));
+    }
+    if (Array.isArray(settings.slideTargets) && !Array.isArray(settings.slideTargets[0])) {
+        // Eski: [haftasız gün hedefleri]
+        settings.slideTargets = Array(4).fill().map(()=>settings.slideTargets.slice());
+    }
+    return settings;
+}
+
+function renderSettingsModal() {
+    const settings = loadSettings();
+    const daysDiv = document.getElementById('settings-days');
+    daysDiv.innerHTML = '';
+    dayNames.forEach((g, i) => {
+        const btn = document.createElement('button');
+        btn.type = "button";
+        btn.className = "day-toggle-btn";
+        if(settings.days.includes(i)) btn.classList.add("selected");
+        btn.textContent = g;
+        btn.dataset.dayIndex = i;
+        btn.onclick = function() {
+            if (settings.days.includes(i)) {
+                settings.days = settings.days.filter(x => x !== i);
+            } else {
+                settings.days.push(i);
+                settings.days.sort();
+            }
+            saveSettings(settings);
+            renderSettingsModal();
+        };
+        daysDiv.appendChild(btn);
+    });
+    document.getElementById('select-all-days').onclick = () => {
+        settings.days = [...Array(7).keys()];
+        saveSettings(settings);
+        renderSettingsModal();
+    };
+    document.getElementById('deselect-all-days').onclick = () => {
+        settings.days = [];
+        saveSettings(settings);
+        renderSettingsModal();
+    };
+
+    // Haftaya göre hedefler tablosu
+    const targetsDiv = document.getElementById('default-slide-targets');
+    targetsDiv.innerHTML = '';
+    for (let week = 0; week < 4; week++) {
+        const weekDiv = document.createElement('div');
+        weekDiv.style = "margin-bottom:16px;border:1px solid #eee;padding:8px 10px;border-radius:7px;background:#f8fafd;";
+        weekDiv.innerHTML = `<b>${week + 1}. Hafta</b>`;
+        settings.days.forEach((dayIdx) => {
+            const label = document.createElement('label');
+            label.style = "display:flex;align-items:center;gap:7px;margin:7px 0 0 0;";
+            label.innerHTML = `${dayNames[dayIdx]}:`;
+            const input = document.createElement('input');
+            input.type = "number";
+            input.min = 0;
+            input.value = settings.slideTargets?.[week]?.[dayIdx] || 0;
+            input.style = "width:70px;padding:3px 7px;border-radius:6px;border:1px solid #bfd1d9;";
+            input.oninput = e => {
+                if (!Array.isArray(settings.slideTargets[week])) settings.slideTargets[week] = [];
+                settings.slideTargets[week][dayIdx] = parseInt(e.target.value, 10) || 0;
+            };
+            label.appendChild(input);
+            weekDiv.appendChild(label);
+        });
+        targetsDiv.appendChild(weekDiv);
+    }
+
+    setTimeout(() => {
+        const showTutBtn = document.getElementById('show-tutorial-from-settings');
+        if (showTutBtn) {
+            showTutBtn.onclick = function() {
+                showTutorialModal(true);
+            };
+        }
+    }, 0);
+
+    document.getElementById('settings-save').onclick = function() {
+        if (!settings.days.length) {
+            showToast('En az bir gün seçmelisiniz!', 'error');
+            return;
+        }
+        saveSettings(settings);
+        closeSettingsModal();
+        initializeWeeks();
+        loadData();
+        updateAllSummaries();
+        showToast('Ayarlar kaydedildi!');
+    };
+}
+
+// Haftaya göre gün hedefi çekme
+function initializeDays(weekIdx, settings) {
+    const daysContainer = document.getElementById(`days-container-${weekIdx}`);
+    daysContainer.innerHTML = "";
+    settings.days.forEach((i) => {
+        let defaultSlides = settings.slideTargets?.[weekIdx]?.[i] || 0;
+        createDayCard(dayNames[i], i, defaultSlides, weekIdx, daysContainer);
+    });
+}
+
+
+
+
+
+
 // Sekmeli HAFTA yönetimi
 function initializeWeeksTabs() {
     const weeksTabs = document.getElementById('weeks-tabs');
