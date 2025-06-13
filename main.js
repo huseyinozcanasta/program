@@ -85,149 +85,6 @@ function loadSettings() {
     if (settings) {
         settings = JSON.parse(settings);
     } else {
-        settings = { days: [0,1,2,3,4,5,6], slideTargets: 0 };
-    }
-    if (settings.defaultSlides !== undefined && settings.slideTargets === undefined) {
-        settings.slideTargets = settings.defaultSlides;
-        delete settings.defaultSlides;
-    }
-    return settings;
-}
-function saveSettings(settings) {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-}
-
-// Ayarlar modalı
-function renderSettingsModal() {
-    const settings = loadSettings();
-    const daysDiv = document.getElementById('settings-days');
-    daysDiv.innerHTML = '';
-    dayNames.forEach((g, i) => {
-        const btn = document.createElement('button');
-        btn.type = "button";
-        btn.className = "day-toggle-btn";
-        if(settings.days.includes(i)) btn.classList.add("selected");
-        btn.textContent = g;
-        btn.dataset.dayIndex = i;
-        btn.onclick = function() {
-            if (settings.days.includes(i)) {
-                settings.days = settings.days.filter(x => x !== i);
-            } else {
-                settings.days.push(i);
-                settings.days.sort();
-            }
-            saveSettings(settings);
-            renderSettingsModal();
-        };
-        daysDiv.appendChild(btn);
-    });
-    document.getElementById('select-all-days').onclick = () => {
-        settings.days = [...Array(7).keys()];
-        saveSettings(settings);
-        renderSettingsModal();
-    };
-    document.getElementById('deselect-all-days').onclick = () => {
-        settings.days = [];
-        saveSettings(settings);
-        renderSettingsModal();
-    };
-    const sameRadio = document.getElementById('same-target-radio');
-    const diffRadio = document.getElementById('different-target-radio');
-    const targetsDiv = document.getElementById('default-slide-targets');
-    let slideTargets = settings.slideTargets || 0;
-    let isSame = !Array.isArray(slideTargets);
-    sameRadio.checked = isSame;
-    diffRadio.checked = !isSame;
-    function renderTargetInputs() {
-        targetsDiv.innerHTML = '';
-        if (isSame) {
-            targetsDiv.innerHTML = `<input type="number" id="default-slides" min="0" value="${slideTargets}" style="width:110px;padding:5px 7px; border-radius:6px; border:1px solid #bfd1d9;">`;
-        } else {
-            settings.days.forEach((dayIdx) => {
-                let val = (Array.isArray(slideTargets) && slideTargets[dayIdx]) || 0;
-                const label = document.createElement('label');
-                label.style = "display:flex;align-items:center;gap:7px;margin-bottom:6px;";
-                label.innerHTML = `${dayNames[dayIdx]}:`;
-                const input = document.createElement('input');
-                input.type = "number";
-                input.min = 0;
-                input.value = val;
-                input.style = "width:70px;padding:4px 7px;border-radius:6px;border:1px solid #bfd1d9;";
-                input.oninput = e => {
-                    if (!Array.isArray(slideTargets)) slideTargets = [];
-                    slideTargets[dayIdx] = parseInt(e.target.value, 10) || 0;
-                };
-                label.appendChild(input);
-                targetsDiv.appendChild(label);
-            });
-        }
-    }
-    renderTargetInputs();
-    sameRadio.onchange = () => {
-        isSame = true;
-        slideTargets = parseInt(document.getElementById('default-slides').value, 10) || 0;
-        renderTargetInputs();
-    };
-    diffRadio.onchange = () => {
-        isSame = false;
-        if (!Array.isArray(slideTargets)) {
-            slideTargets = [];
-        }
-        renderTargetInputs();
-    };
-
-    setTimeout(() => {
-        const showTutBtn = document.getElementById('show-tutorial-from-settings');
-        if (showTutBtn) {
-            showTutBtn.onclick = function() {
-                showTutorialModal(true);
-            };
-        }
-    }, 0);
-
-    document.getElementById('settings-save').onclick = function() {
-        if (!settings.days.length) {
-            showToast('En az bir gün seçmelisiniz!', 'error');
-            return;
-        }
-        if (sameRadio.checked) {
-            let val = parseInt(document.getElementById('default-slides').value, 10) || 0;
-            settings.slideTargets = val;
-        } else {
-            let arr = [];
-            targetsDiv.querySelectorAll('input[type="number"]').forEach((el, i) => {
-                arr[settings.days[i]] = parseInt(el.value, 10) || 0;
-            });
-            settings.slideTargets = arr;
-        }
-        saveSettings(settings);
-        closeSettingsModal();
-        initializeWeeksTabs();
-        loadData();
-        updateAllSummaries();
-        showToast('Ayarlar kaydedildi!');
-    };
-}
-settingsBtn.onclick = function() {
-    renderSettingsModal();
-    settingsModal.style.display = '';
-};
-function closeSettingsModal() {
-    settingsModal.style.display = 'none';
-}
-document.getElementById('settings-close').onclick = closeSettingsModal;
-document.getElementById('settings-cancel').onclick = closeSettingsModal;
-settingsModal.addEventListener('click', function(e){
-    if (e.target === settingsModal) closeSettingsModal();
-});
-
-
-
-function loadSettings() {
-    let settings = localStorage.getItem(SETTINGS_KEY);
-    if (settings) {
-        settings = JSON.parse(settings);
-    } else {
         // Yeni sistemde default olarak 4 hafta x 7 gün 0 hedef
         settings = { days: [0,1,2,3,4,5,6], slideTargets: Array(4).fill().map(()=>Array(7).fill(0)) };
     }
@@ -241,7 +98,11 @@ function loadSettings() {
     }
     return settings;
 }
+function saveSettings(settings) {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+}
 
+// Ayarlar modalı
 function renderSettingsModal() {
     const settings = loadSettings();
     const daysDiv = document.getElementById('settings-days');
@@ -318,12 +179,24 @@ function renderSettingsModal() {
         }
         saveSettings(settings);
         closeSettingsModal();
-        initializeWeeks();
+        initializeWeeksTabs();
         loadData();
         updateAllSummaries();
         showToast('Ayarlar kaydedildi!');
     };
 }
+settingsBtn.onclick = function() {
+    renderSettingsModal();
+    settingsModal.style.display = '';
+};
+function closeSettingsModal() {
+    settingsModal.style.display = 'none';
+}
+document.getElementById('settings-close').onclick = closeSettingsModal;
+document.getElementById('settings-cancel').onclick = closeSettingsModal;
+settingsModal.addEventListener('click', function(e){
+    if (e.target === settingsModal) closeSettingsModal();
+});
 
 // Haftaya göre gün hedefi çekme
 function initializeDays(weekIdx, settings) {
@@ -334,11 +207,6 @@ function initializeDays(weekIdx, settings) {
         createDayCard(dayNames[i], i, defaultSlides, weekIdx, daysContainer);
     });
 }
-
-
-
-
-
 
 // Sekmeli HAFTA yönetimi
 function initializeWeeksTabs() {
@@ -387,7 +255,7 @@ function renderDayCard(weekIdx, dayTabIdx) {
     const settings = loadSettings();
     const dayIndex = settings.days[dayTabIdx];
     const dayName = dayNames[dayIndex];
-    const defaultSlides = Array.isArray(settings.slideTargets) ? (settings.slideTargets[dayIndex] || 0) : (settings.slideTargets || 0);
+    const defaultSlides = settings.slideTargets?.[weekIdx]?.[dayIndex] || 0;
     const dayContent = document.getElementById('day-content');
     dayContent.innerHTML = '';
     createDayCard(dayName, dayIndex, defaultSlides, weekIdx, dayContent);
@@ -443,7 +311,7 @@ function createDayCard(dayName, index, defaultSlides, weekIdx, parent) {
     header.innerHTML = `<span>${dayName}</span>`;
     card.appendChild(header);
     const content = document.createElement('div');
-    content.className = 'card-content open'; // Sekmede hep açık
+    content.className = 'card-content open';
     content.innerHTML = `
         <div>
             <label for="slide-target-${weekIdx}-${index}">Hedef Slayt Sayısı:</label>
