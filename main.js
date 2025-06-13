@@ -5,6 +5,8 @@ const dayNames = [
     "Pazartesi", "Salı", "Çarşamba", "Perşembe",
     "Cuma", "Cumartesi", "Pazar"
 ];
+const weekCount = 4;
+
 const settingsBtn = document.getElementById('settings-btn');
 const settingsModal = document.getElementById('settings-modal');
 const weeksContainer = document.getElementById('weeks-container');
@@ -81,11 +83,34 @@ function loadSettings() {
     if (settings) {
         settings = JSON.parse(settings);
     } else {
-        settings = { days: [0,1,2,3,4,5,6], slideTargets: 0 };
+        // Varsayılan: tüm günler aktif, 0 hedef, 4 hafta
+        settings = { days: [0,1,2,3,4,5,6], slideTargets: {} };
+        for (let w = 0; w < weekCount; w++) {
+            settings.slideTargets[w] = {};
+            for (const d of settings.days) {
+                settings.slideTargets[w][d] = 0;
+            }
+        }
     }
-    if (settings.defaultSlides !== undefined && settings.slideTargets === undefined) {
-        settings.slideTargets = settings.defaultSlides;
-        delete settings.defaultSlides;
+    // Eski sistemden geçiş (tek hedef veya günlere özel dizi)
+    if (
+        typeof settings.slideTargets === "number" ||
+        Array.isArray(settings.slideTargets)
+    ) {
+        // Tüm haftalara uygula
+        const slideTargets = {};
+        for (let w = 0; w < weekCount; w++) {
+            slideTargets[w] = {};
+            for (const d of settings.days) {
+                if (typeof settings.slideTargets === "number") {
+                    slideTargets[w][d] = settings.slideTargets;
+                } else {
+                    slideTargets[w][d] = settings.slideTargets[d] || 0;
+                }
+            }
+        }
+        settings.slideTargets = slideTargets;
+        saveSettings(settings);
     }
     return settings;
 }
@@ -125,51 +150,38 @@ function renderSettingsModal() {
         saveSettings(settings);
         renderSettingsModal();
     };
-    const sameRadio = document.getElementById('same-target-radio');
-    const diffRadio = document.getElementById('different-target-radio');
-    const targetsDiv = document.getElementById('default-slide-targets');
-    let slideTargets = settings.slideTargets || 0;
-    let isSame = !Array.isArray(slideTargets);
-    sameRadio.checked = isSame;
-    diffRadio.checked = !isSame;
-    function renderTargetInputs() {
-        targetsDiv.innerHTML = '';
-        if (isSame) {
-            targetsDiv.innerHTML = `<input type="number" id="default-slides" min="0" value="${slideTargets}" style="width:110px;padding:5px 7px; border-radius:6px; border:1px solid #bfd1d9;">`;
-        } else {
-            settings.days.forEach((dayIdx) => {
-                let val = (Array.isArray(slideTargets) && slideTargets[dayIdx]) || 0;
-                const label = document.createElement('label');
-                label.style = "display:flex;align-items:center;gap:7px;margin-bottom:6px;";
-                label.innerHTML = `${dayNames[dayIdx]}:`;
-                const input = document.createElement('input');
-                input.type = "number";
-                input.min = 0;
-                input.value = val;
-                input.style = "width:70px;padding:4px 7px;border-radius:6px;border:1px solid #bfd1d9;";
-                input.oninput = e => {
-                    if (!Array.isArray(slideTargets)) slideTargets = [];
-                    slideTargets[dayIdx] = parseInt(e.target.value, 10) || 0;
-                };
-                label.appendChild(input);
-                targetsDiv.appendChild(label);
-            });
-        }
-    }
-    renderTargetInputs();
-    sameRadio.onchange = () => {
-        isSame = true;
-        slideTargets = parseInt(document.getElementById('default-slides').value, 10) || 0;
-        renderTargetInputs();
-    };
-    diffRadio.onchange = () => {
-        isSame = false;
-        if (!Array.isArray(slideTargets)) {
-            slideTargets = [];
-        }
-        renderTargetInputs();
-    };
 
+    // Yeni: Haftalara ve günlere göre hedef
+    const targetsDiv = document.getElementById('default-slide-targets');
+    targetsDiv.innerHTML = '';
+    for (let w = 0; w < weekCount; w++) {
+        const weekLabel = document.createElement('div');
+        weekLabel.innerHTML = `<b>Hafta ${w+1}</b>`;
+        weekLabel.style.margin = "8px 0 5px 0";
+        targetsDiv.appendChild(weekLabel);
+        const weekTargets = document.createElement('div');
+        weekTargets.style.display = "flex";
+        weekTargets.style.flexWrap = "wrap";
+        weekTargets.style.gap = "10px";
+        settings.days.forEach((dayIdx) => {
+            let val = (settings.slideTargets[w] && settings.slideTargets[w][dayIdx]) || 0;
+            const label = document.createElement('label');
+            label.style = "display:flex;align-items:center;gap:4px;font-size:0.98em;";
+            label.innerHTML = `${dayNames[dayIdx]}:`;
+            const input = document.createElement('input');
+            input.type = "number";
+            input.min = 0;
+            input.value = val;
+            input.style = "width:50px;padding:3px 5px;border-radius:6px;border:1px solid #bfd1d9;";
+            input.oninput = e => {
+                if (!settings.slideTargets[w]) settings.slideTargets[w] = {};
+                settings.slideTargets[w][dayIdx] = parseInt(e.target.value, 10) || 0;
+            };
+            label.appendChild(input);
+            weekTargets.appendChild(label);
+        });
+        targetsDiv.appendChild(weekTargets);
+    }
     // 👀 Öğreticiyi Göster butonu
     setTimeout(() => {
         const showTutBtn = document.getElementById('show-tutorial-from-settings');
@@ -185,16 +197,7 @@ function renderSettingsModal() {
             showToast('En az bir gün seçmelisiniz!', 'error');
             return;
         }
-        if (sameRadio.checked) {
-            let val = parseInt(document.getElementById('default-slides').value, 10) || 0;
-            settings.slideTargets = val;
-        } else {
-            let arr = [];
-            targetsDiv.querySelectorAll('input[type="number"]').forEach((el, i) => {
-                arr[settings.days[i]] = parseInt(el.value, 10) || 0;
-            });
-            settings.slideTargets = arr;
-        }
+        // slideTargets zaten input'ta güncelleniyor
         saveSettings(settings);
         closeSettingsModal();
         initializeWeeks();
@@ -218,7 +221,7 @@ settingsModal.addEventListener('click', function(e){
 function initializeWeeks() {
     weeksContainer.innerHTML = '';
     const settings = loadSettings();
-    for(let week=0; week<4; week++) {
+    for(let week=0; week<weekCount; week++) {
         const weekAccordion = document.createElement('div');
         weekAccordion.className = 'week-accordion';
         weekAccordion.id = `week-accordion-${week}`;
@@ -265,9 +268,9 @@ function initializeWeeks() {
 function initializeDays(weekIdx, settings) {
     const daysContainer = document.getElementById(`days-container-${weekIdx}`);
     daysContainer.innerHTML = "";
-    let targets = settings.slideTargets;
+    const weekTargets = (settings.slideTargets && settings.slideTargets[weekIdx]) || {};
     settings.days.forEach((i) => {
-        let defaultSlides = Array.isArray(targets) ? (targets[i] || 0) : (targets || 0);
+        let defaultSlides = weekTargets[i] || 0;
         createDayCard(dayNames[i], i, defaultSlides, weekIdx, daysContainer);
     });
 }
@@ -343,7 +346,7 @@ function createDayCard(dayName, index, defaultSlides, weekIdx, parent) {
 function saveData() {
     const data = [];
     let isValid = true;
-    for (let week = 0; week < 4; week++) {
+    for (let week = 0; week < weekCount; week++) {
         const weekCards = document.querySelectorAll(`#days-container-${week} .card`);
         const weekData = [];
         weekCards.forEach(card => {
@@ -369,7 +372,7 @@ function saveData() {
 function loadData() {
     const data = JSON.parse(localStorage.getItem(MONTHLY_KEY));
     if (data) {
-        for (let week = 0; week < 4; week++) {
+        for (let week = 0; week < weekCount; week++) {
             const weekCards = document.querySelectorAll(`#days-container-${week} .card`);
             if (data[week]) {
                 weekCards.forEach((card, idx) => {
@@ -449,7 +452,7 @@ function checkDarkModePreference() {
 }
 function updateAllSummaries() {
     let monthlyTarget = 0, monthlyCompleted = 0, hasAnyData = false, monthlyQuestions = 0;
-    for (let week = 0; week < 4; week++) {
+    for (let week = 0; week < weekCount; week++) {
         let totalTarget = 0, totalCompleted = 0, totalQuestions = 0;
         const summaryTableBody = document.getElementById(`summary-table-body-${week}`);
         const weeklyProgressFill = document.querySelector(`#weekly-progress-bar-${week} .progress-bar-fill`);
@@ -514,7 +517,7 @@ document.getElementById('clear-all-btn').addEventListener('click', function() {
         localStorage.removeItem(SETTINGS_KEY);
         localStorage.removeItem('darkModeEnabled');
         initializeWeeks();
-        for (let week = 0; week < 4; week++) {
+        for (let week = 0; week < weekCount; week++) {
             const weekCards = document.querySelectorAll(`#days-container-${week} .card`);
             weekCards.forEach(card => {
                 card.querySelector('.slide-target').value = 0;
