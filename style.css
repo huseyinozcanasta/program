@@ -508,3 +508,60 @@ body.dark-mode .tutorial-content {
     .summary-section { padding: 11px 3vw 2px 3vw;}
     .progress-label { font-size: 0.93em;}
 }
+
+/* Ayarlar modalı için karanlık mod desteği */
+body.dark-mode #settings-modal > div {
+    background: #232831 !important;
+    color: #e3eaf0 !important;
+    box-shadow: 0 2px 22px #19A7CE27 !important;
+    border: 1.5px solid #2d394b !important;
+}
+body.dark-mode #settings-modal h2 {
+    color: #30c8e8 !important;
+}
+body.dark-mode #settings-modal label {
+    color: #b6d4e3 !important;
+}
+body.dark-mode #settings-modal input[type="number"],
+body.dark-mode #settings-modal input[type="radio"],
+body.dark-mode #settings-modal input[type="checkbox"] {
+    background: #242e39 !important;
+    color: #e3eaf0 !important;
+    border: 1px solid #3c4b5d !important;
+}
+body.dark-mode #settings-modal input[type="number"]:focus {
+    border-color: #19A7CE !important;
+    box-shadow: 0 0 0 2px #19a7ce33 !important;
+}
+body.dark-mode #settings-modal button {
+    background: linear-gradient(90deg, #19A7CE 70%, #146C94 100%) !important;
+    color: #fff !important;
+}
+body.dark-mode #settings-modal button#settings-cancel {
+    background: #313a46 !important;
+    color: #e3eaf0 !important;
+}
+body.dark-mode #settings-modal button#settings-close {
+    color: #bbb !important;
+}
+body.dark-mode #settings-modal .day-toggle-btn {
+    background: #181B23 !important;
+    color: #30c8e8 !important;
+    border: 1px solid #2d394b !important;
+}
+body.dark-mode #settings-modal .day-toggle-btn.selected {
+    background: #19A7CE !important;
+    color: #fff !important;
+}
+
+/* Karanlık modda ve normalde ayarlar modalının düzgün ve kaydırılabilir olması için */
+#settings-modal {
+    overflow: auto !important;
+    /* Modal ekranın tamamını kapladığı için, içerik taşarsa burada scroll çıkar */
+}
+
+#settings-modal > div {
+    max-height: 96vh;
+    overflow-y: auto;
+    /* Modal içeriği ekranın %96'sından uzun olursa içinde scroll çıkar */
+}
