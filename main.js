@@ -103,6 +103,21 @@ function saveSettings(settings) {
 }
 
 // Ayarlar modalı
+function updateAllCardTargetsFromSettings() {
+    const settings = loadSettings();
+    let data = loadAllData();
+    for (let week = 0; week < 4; week++) {
+        if (!data[week]) data[week] = [];
+        settings.days.forEach(dayIdx => {
+            let found = data[week].find(d => d.dayIndex === dayIdx);
+            if (found) {
+                found.slideTarget = settings.slideTargets?.[week]?.[dayIdx] || 0;
+            }
+        });
+    }
+    localStorage.setItem(MONTHLY_KEY, JSON.stringify(data));
+}
+
 function renderSettingsModal() {
     const settings = loadSettings();
     const daysDiv = document.getElementById('settings-days');
@@ -178,6 +193,7 @@ function renderSettingsModal() {
             return;
         }
         saveSettings(settings);
+        updateAllCardTargetsFromSettings();
         closeSettingsModal();
         initializeWeeksTabs();
         loadData();
