@@ -565,3 +565,37 @@ body.dark-mode #settings-modal .day-toggle-btn.selected {
     overflow-y: auto;
     /* Modal içeriği ekranın %96'sından uzun olursa içinde scroll çıkar */
 }
+
+
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+.tab {
+    padding: 9px 18px;
+    border-radius: 9px 9px 0 0;
+    background: #eaf8fc;
+    color: #146C94;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1.5px solid #19A7CE;
+    border-bottom: none;
+    transition: background .3s, color .3s;
+}
+.tab.active {
+    background: #19A7CE;
+    color: #fff;
+    border-bottom: 2.5px solid #fff;
+}
+body.dark-mode .tab {
+    background: #232831;
+    color: #30c8e8;
+    border-color: #146C94;
+}
+body.dark-mode .tab.active {
+    background: #146C94;
+    color: #fff;
+}
