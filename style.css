@@ -504,3 +504,11 @@ body.dark-mode .tutorial-content {
     .summary-section { padding: 11px 3vw 2px 3vw;}
     .progress-label { font-size: 0.93em;}
 }
+
+#settings-modal {
+    overflow-y: auto !important;
+}
+#settings-modal > div {
+    max-height: 90vh;
+    overflow-y: auto;
+}
